@@ -4,6 +4,7 @@ import numpy as np
 import pytesseract
 import os
 from werkzeug.utils import secure_filename
+from PIL import Image
 
 app = Flask(__name__)
 
@@ -40,26 +41,24 @@ def remove():
 @app.route("/auto_remove", methods=["POST"])
 def auto_remove():
     file = request.files["image"]
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(filepath)
+    img = Image.open(file.stream).convert("RGB")
+    img_cv = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
-    img = cv2.imread(filepath)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # OCR 识别水印文字
+    data = pytesseract.image_to_data(img_cv, output_type=pytesseract.Output.DICT)
 
-    data = pytesseract.image_to_data(gray, output_type=pytesseract.Output.DICT)
+    mask = np.zeros(img_cv.shape[:2], dtype=np.uint8)
 
-    mask = np.zeros(img.shape[:2], np.uint8)
     for i, text in enumerate(data["text"]):
-        if "jili707.net" in text.lower():
-            x, y, w, h = data["left"][i], data["top"][i], data["width"][i], data["height"][i]
-            mask[y:y+h, x:x+w] = 255
+        if "jili707.net" in text.lower():  # 只针对水印
+            (x, y, w, h) = (data["left"][i], data["top"][i], data["width"][i], data["height"][i])
+            mask[y:y+h, x:x+w] = 255  # 标记要去掉的区域
 
-    dst = cv2.inpaint(img, mask, 7, cv2.INPAINT_TELEA)
-    outpath = os.path.join(RESULT_FOLDER, "auto_" + filename)
-    cv2.imwrite(outpath, dst)
+    # 修复图像
+    result = cv2.inpaint(img_cv, mask, 3, cv2.INPAINT_TELEA)
 
-    return send_file(outpath, mimetype="image/png")
+    _, buffer = cv2.imencode(".png", result)
+    return Response(buffer.tobytes(), mimetype="image/png")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
