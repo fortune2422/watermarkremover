@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, Response
+from flask import Flask, request, render_template, Response, send_file
 import cv2
 import numpy as np
 import pytesseract
@@ -20,7 +20,7 @@ def index():
 # 手动模式
 @app.route("/remove", methods=["POST"])
 def remove():
-    file = request.files["image"]
+    file = request.files["file"]
     filename = secure_filename(file.filename)
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
