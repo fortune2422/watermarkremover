@@ -18,6 +18,14 @@ def remove():
     y = int(request.form.get("y"))
     w = int(request.form.get("w"))
     h = int(request.form.get("h"))
+    
+    # 处理负数宽高（保证左上角起点）
+    if w < 0:
+        x += w
+        w = -w
+    if h < 0:
+        y += h
+        h = -h
 
     img = np.array(Image.open(file).convert("RGB"))
     mask = np.zeros(img.shape[:2], np.uint8)
