@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import os
 from flask import Flask, request, render_template, send_file
 from io import BytesIO
 from PIL import Image
@@ -33,3 +34,7 @@ def remove():
     output.save(buf, format="PNG")
     buf.seek(0)
     return send_file(buf, mimetype="image/png")
+    
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
