@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, send_file
+from flask import Flask, request, render_template, Response
 import cv2
 import numpy as np
 import pytesseract
