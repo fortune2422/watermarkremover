@@ -50,9 +50,11 @@ def auto_remove():
     mask = np.zeros(img_cv.shape[:2], dtype=np.uint8)
 
     for i, text in enumerate(data["text"]):
-        if "jili707.net" in text.lower():  # 只针对水印
-            (x, y, w, h) = (data["left"][i], data["top"][i], data["width"][i], data["height"][i])
-            mask[y:y+h, x:x+w] = 255  # 标记要去掉的区域
+        txt = text.lower().strip()
+        if "jili" in txt or "707" in txt or ".net" in txt:
+        (x, y, w, h) = (data["left"][i], data["top"][i], data["width"][i], data["height"][i])
+        mask[y:y+h, x:x+w] = 255
+
 
     # 修复图像
     result = cv2.inpaint(img_cv, mask, 3, cv2.INPAINT_TELEA)
