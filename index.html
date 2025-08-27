@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>去水印工具</title>
+  <style>
+    body { font-family: Arial; text-align: center; margin: 20px; }
+    canvas { border: 1px solid #ccc; cursor: crosshair; }
+  </style>
+</head>
+<body>
+  <h2>上传图片并框选水印区域</h2>
+  <form id="form" method="post" enctype="multipart/form-data" action="/remove">
+    <input type="file" name="image" id="imageInput" accept="image/*"><br><br>
+    <canvas id="canvas"></canvas><br>
+    <input type="hidden" name="x" id="x">
+    <input type="hidden" name="y" id="y">
+    <input type="hidden" name="w" id="w">
+    <input type="hidden" name="h" id="h">
+    <button type="submit">去水印</button>
+  </form>
+
+  <script>
+    const input = document.getElementById("imageInput");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    let img = new Image();
+    let startX, startY, isDrawing = false;
+
+    input.addEventListener("change", e => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = ev => {
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+        }
+        img.src = ev.target.result;
+      }
+      reader.readAsDataURL(file);
+    });
+
+    canvas.addEventListener("mousedown", e => {
+      startX = e.offsetX;
+      startY = e.offsetY;
+      isDrawing = true;
+    });
+
+    canvas.addEventListener("mouseup", e => {
+      if (!isDrawing) return;
+      const w = e.offsetX - startX;
+      const h = e.offsetY - startY;
+      document.getElementById("x").value = startX;
+      document.getElementById("y").value = startY;
+      document.getElementById("w").value = w;
+      document.getElementById("h").value = h;
+      ctx.drawImage(img, 0, 0);
+      ctx.strokeStyle = "red";
+      ctx.strokeRect(startX, startY, w, h);
+      isDrawing = false;
+    });
+  </script>
+</body>
+</html>
