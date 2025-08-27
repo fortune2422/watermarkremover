@@ -34,7 +34,7 @@ def remove():
     mask[y:y+h, x:x+w] = 255
 
     # inpaint 修复
-    dst = cv2.inpaint(img, mask, 3, cv2.INPAINT_TELEA)
+    dst = cv2.inpaint(img, mask, 7, cv2.INPAINT_TELEA)
 
     # 返回图片
     output = Image.fromarray(dst)
