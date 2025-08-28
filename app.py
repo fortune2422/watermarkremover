@@ -1,66 +1,80 @@
-from flask import Flask, request, render_template, Response, send_file
-import cv2
-import numpy as np
-import pytesseract
-import os
-from werkzeug.utils import secure_filename
-from PIL import Image
-
-app = Flask(__name__)
-
-UPLOAD_FOLDER = "uploads"
-RESULT_FOLDER = "results"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(RESULT_FOLDER, exist_ok=True)
-
-@app.route("/")
-def index():
-    return render_template("index.html")
-
-# 手动模式
-@app.route("/remove", methods=["POST"])
-def remove():
-    file = request.files["file"]
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(filepath)
-
-    x, y, w, h = int(request.form["x"]), int(request.form["y"]), int(request.form["w"]), int(request.form["h"])
-    img = cv2.imread(filepath)
-
-    mask = np.zeros(img.shape[:2], np.uint8)
-    mask[y:y+h, x:x+w] = 255
-
-    dst = cv2.inpaint(img, mask, 7, cv2.INPAINT_TELEA)
-    outpath = os.path.join(RESULT_FOLDER, "manual_" + filename)
-    cv2.imwrite(outpath, dst)
-
-    return send_file(outpath, mimetype="image/png")
-
-# 自动识别模式
-@app.route("/auto_remove", methods=["POST"])
-def auto_remove():
-    file = request.files["image"]
-    img = Image.open(file.stream).convert("RGB")
-    img_cv = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-
-    # OCR 识别水印文字
-    data = pytesseract.image_to_data(img_cv, output_type=pytesseract.Output.DICT)
-
-    mask = np.zeros(img_cv.shape[:2], dtype=np.uint8)
-
-    for i, text in enumerate(data["text"]):
-        txt = text.lower().strip()
-        if "jili" in txt or "707" in txt or ".net" in txt:
-        (x, y, w, h) = (data["left"][i], data["top"][i], data["width"][i], data["height"][i])
-        mask[y:y+h, x:x+w] = 255
+import io
+return (
+"<h3>AI Watermark Remover API</h3>"
+"<ul>"
+"<li>POST /api/remove — JSON: image (dataURI), mask (dataURI), prompt</li>"
+"<li>POST /api/auto_mask — JSON: image (dataURI), returns mask (dataURI) — Florence‑2 (预留)</li>"
+f"<li>Backend: {BACKEND} | LAMA_ENDPOINT: {'set' if LAMA_ENDPOINT else 'not set'}</li>"
+"</ul>"
+)
 
 
-    # 修复图像
-    result = cv2.inpaint(img_cv, mask, 3, cv2.INPAINT_TELEA)
 
-    _, buffer = cv2.imencode(".png", result)
-    return Response(buffer.tobytes(), mimetype="image/png")
+
+@app.post("/api/remove")
+def api_remove():
+"""Main inpaint endpoint: returns dataURI PNG."""
+try:
+data = request.get_json(force=True)
+img_uri = data.get("image")
+mask_uri = data.get("mask")
+prompt = data.get("prompt", "")
+
+
+if not img_uri or not mask_uri:
+return jsonify({"ok": False, "error": "image and mask are required"}), 400
+
+
+img_pil = b64_to_pil(img_uri)
+mask_pil = b64_to_pil(mask_uri)
+
+
+# Normalize mask to binary white(=inpaint)
+mask_gray = mask_pil.convert("L")
+mask_bin = Image.fromarray((np.array(mask_gray) > 10).astype(np.uint8) * 255)
+
+
+if BACKEND == "lama":
+if not LAMA_ENDPOINT:
+# Fall back to sd15 if LAMA endpoint missing
+out_pil = inpaint_sd15(img_pil, mask_bin, prompt)
+else:
+out_pil = inpaint_lama_http(img_pil, mask_bin, prompt)
+else:
+out_pil = inpaint_sd15(img_pil, mask_bin, prompt)
+
+
+return jsonify({"ok": True, "image": pil_to_b64(out_pil, fmt="PNG")})
+except Exception as e:
+return jsonify({"ok": False, "error": str(e)}), 500
+
+
+
+
+@app.post("/api/auto_mask")
+def api_auto_mask():
+"""(预留) Florence‑2 自动检测水印，返回 mask 的 dataURI。
+你可以在下一步引入 Florence‑2 推理代码，或把该逻辑放到独立服务。
+现在暂时返回 501，便于先联调 inpaint 主流程。
+"""
+return jsonify({
+"ok": False,
+"error": "Florence‑2 auto-mask not implemented in this step. Provide a user-drawn mask for now.",
+}), 501
+
+
+
+
+@app.post("/api/ping")
+def api_ping():
+return jsonify({
+"ok": True,
+"backend": BACKEND,
+"lama_endpoint": bool(LAMA_ENDPOINT),
+})
+
+
+
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+app.run(host="0.0.0.0", port=8000, debug=True)
