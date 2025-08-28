@@ -1,11 +1,21 @@
 services:
-  - type: web
-    name: watermark-remover
-    env: docker
-    plan: free
-    autoDeploy: true
-    branch: main
-    dockerfilePath: ./Dockerfile
-    envVars:
-      - key: PORT
-        value: 5000
+- type: web
+name: watermark-remover-ai
+env: python
+plan: standard # 如需 GPU，请切换到 GPU 方案
+buildCommand: pip install -r requirements.txt
+startCommand: gunicorn app:app --preload --workers=1 --threads=8 --timeout=300
+envVars:
+- key: BACKEND
+value: lama
+- key: HUGGINGFACE_TOKEN
+sync: false # 在 Render 仪表盘里设置机密变量
+- key: SD15_MODEL
+value: runwayml/stable-diffusion-inpainting
+- key: SD_STEPS
+value: "35"
+- key: SD_GUIDANCE
+value: "7.0"
+- key: SD_MAX_SIDE
+value: "896"
+healthCheckPath: /
