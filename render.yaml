@@ -1,21 +1,15 @@
 services:
 - type: web
-name: watermark-remover-ai
-env: python
-plan: standard # 如需 GPU，请切换到 GPU 方案
-buildCommand: pip install -r requirements.txt
-startCommand: gunicorn app:app --preload --workers=1 --threads=8 --timeout=300
-envVars:
-- key: BACKEND
-value: lama
-- key: HUGGINGFACE_TOKEN
-sync: false # 在 Render 仪表盘里设置机密变量
-- key: SD15_MODEL
-value: runwayml/stable-diffusion-inpainting
-- key: SD_STEPS
-value: "35"
-- key: SD_GUIDANCE
-value: "7.0"
-- key: SD_MAX_SIDE
-value: "896"
-healthCheckPath: /
+  name: watermark-remover-ai
+  env: python
+  plan: free   # 免费方案
+  buildCommand: pip install -r requirements.txt
+  startCommand: gunicorn app:app --preload --workers=1 --threads=8 --timeout=300
+  envVars:
+    - key: BACKEND
+      value: lama
+    - key: LAMA_ENDPOINT
+      value: "http://lama-cleaner-service:5000"
+    - key: HUGGINGFACE_TOKEN
+      sync: false # 如果以后要用 SD15 可以再加
+  healthCheckPath: /
