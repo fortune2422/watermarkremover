@@ -2,7 +2,7 @@ import io
 import os
 import base64
 from typing import Optional
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from PIL import Image
 import numpy as np
 
@@ -130,16 +130,9 @@ def inpaint_lama_http(img_rgba: Image.Image, mask_rgba: Image.Image, prompt: str
 
 # =============== Routes ===============
 
-@app.get("/")
-def home():
-    return (
-        "<h3>AI Watermark Remover API</h3>"
-        "<ul>"
-        "<li>POST /api/remove — JSON: image (dataURI), mask (dataURI), prompt</li>"
-        "<li>POST /api/auto_mask — JSON: image (dataURI), returns mask (dataURI) — Florence-2 (预留)</li>"
-        f"<li>Backend: {BACKEND} | LAMA_ENDPOINT: {'set' if LAMA_ENDPOINT else 'not set'}</li>"
-        "</ul>"
-    )
+@app.route("/")
+def index():
+    return render_template("index.html")
 
 @app.post("/api/remove")
 def api_remove():
@@ -190,4 +183,6 @@ def api_ping():
     })
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    port = int(os.getenv("PORT", 8000))
+    app.run(host="0.0.0.0", port=port, debug=False)
+
