@@ -1,88 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>去水印工具</title>
+  <meta charset="UTF-8">
+  <title>AI Watermark Remover</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
   <style>
-    body { font-family: Arial; text-align: center; margin: 20px; }
-    canvas { border: 1px solid #ccc; cursor: crosshair; max-width: 100%; }
-    button { margin: 10px; padding: 8px 16px; border-radius: 5px; cursor: pointer; }
+    #canvasWrapper { position: relative; display: inline-block; }
+    #maskCanvas { position: absolute; top: 0; left: 0; cursor: crosshair; }
   </style>
 </head>
-<body>
-  <h2>上传图片并选择去水印方式</h2>
+<body class="container py-4">
+  <h1 class="mb-4">AI Watermark Remover (Florence-2 + LaMA)</h1>
 
-  <form id="manualForm" method="post" enctype="multipart/form-data" action="/remove">
-    <input type="file" name="image" id="imageInput" accept="image/*"><br><br>
-    <canvas id="canvas"></canvas><br>
-    <input type="hidden" name="x" id="x">
-    <input type="hidden" name="y" id="y">
-    <input type="hidden" name="w" id="w">
-    <input type="hidden" name="h" id="h">
-    <button type="submit">手动去水印</button>
-  </form>
+<input type="file" id="fileInput" accept="image/*" class="form-control mb-3">
+<div id="canvasWrapper" class="mb-3">
+  <canvas id="imageCanvas"></canvas>
+  <canvas id="maskCanvas"></canvas>
+</div>
 
-  <form id="autoForm" method="post" enctype="multipart/form-data" action="/auto_remove">
-    <input type="hidden" name="image" id="autoImage">
-    <button type="submit">自动去水印</button>
-  </form>
+<button id="clearBtn" class="btn btn-secondary">Clear Mask</button>
+<button id="uploadBtn" class="btn btn-primary">Remove Watermark</button>
 
-  <script>
-    const input = document.getElementById("imageInput");
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
-    const autoForm = document.getElementById("autoForm");
-    const autoImage = document.getElementById("autoImage");
+<div class="mt-4">
+  <h3>Result:</h3>
+  <img id="resultImg" class="img-fluid border" />
+</div>
 
-    let img = new Image();
-    let startX, startY, isDrawing = false;
-    let currentFile = null;
 
-    input.addEventListener("change", e => {
-      currentFile = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = ev => {
-        img.onload = () => {
-          canvas.width = img.width;
-          canvas.height = img.height;
-          ctx.drawImage(img, 0, 0);
-        }
-        img.src = ev.target.result;
-
-        // 让自动表单也能用同一张图片
-        let dt = new DataTransfer();
-        dt.items.add(currentFile);
-        autoForm.querySelector("input[name='image']")?.remove();
-        let hiddenInput = document.createElement("input");
-        hiddenInput.type = "file";
-        hiddenInput.name = "image";
-        hiddenInput.files = dt.files;
-        hiddenInput.style.display = "none";
-        autoForm.appendChild(hiddenInput);
-      }
-      reader.readAsDataURL(currentFile);
-    });
-
-    canvas.addEventListener("mousedown", e => {
-      startX = e.offsetX;
-      startY = e.offsetY;
-      isDrawing = true;
-    });
-
-    canvas.addEventListener("mouseup", e => {
-      if (!isDrawing) return;
-      const w = e.offsetX - startX;
-      const h = e.offsetY - startY;
-      document.getElementById("x").value = startX;
-      document.getElementById("y").value = startY;
-      document.getElementById("w").value = w;
-      document.getElementById("h").value = h;
-      ctx.drawImage(img, 0, 0);
-      ctx.strokeStyle = "red";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(startX, startY, w, h);
-      isDrawing = false;
-    });
-  </script>
+  <script src="/static/app.js"></script>
 </body>
 </html>
