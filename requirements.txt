@@ -1,5 +1,25 @@
-Flask
-opencv-python
-pillow
-numpy
-pytesseract
+# Web
+Flask==3.0.3
+Werkzeug==3.0.3
+gunicorn==22.0.0
+
+
+# Core
+Pillow==10.4.0
+numpy==1.26.4
+
+
+# Detection (Florence‑2 via transformers)
+transformers==4.43.3
+accelerate==0.33.0
+safetensors==0.4.3
+
+
+# Inpainting backends
+# 1) LaMA via lama-cleaner (wraps LaMA/ZITS 等，自动下载权重)
+lama-cleaner==1.2.3
+
+
+# 2) Stable Diffusion Inpainting as fallback
+torch==2.3.1
+diffusers==0.29.2
