@@ -64,7 +64,7 @@ uploadButton.addEventListener("click", async () => {
 
     const data = await res.json();
     const resultImg = new Image();
-    resultImg.src = data.result; // 后端返回的 base64
+    resultImg.src = data.image; // 后端返回的 base64
     document.body.appendChild(resultImg);
 
   } catch (err) {
