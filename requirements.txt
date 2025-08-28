@@ -10,7 +10,6 @@ numpy==1.26.4
 
 
 # Detection (Florence‑2 via transformers)
-transformers==4.43.3
 accelerate==0.33.0
 safetensors==0.4.3
 
