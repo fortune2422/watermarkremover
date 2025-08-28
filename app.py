@@ -61,14 +61,15 @@ def get_sd_pipe():
     safety_checker=None,
   )
 if device == "cuda":
-  pipe = pipe.to("cuda")
+    pipe = pipe.to("cuda")
 else:
-  try:
-    pipe.enable_sequential_cpu_offload()
-  except Exception:
-    pass
-  _sd_pipe = pipe
-  return _sd_pipe
+    try:
+        pipe.enable_sequential_cpu_offload()
+    except Exception:
+        pass
+
+_sd_pipe = pipe
+return _sd_pipe
 
 def inpaint_sd15(img_rgba: Image.Image, mask_rgba: Image.Image, prompt: str = "") -> Image.Image:
   pipe = get_sd_pipe()
