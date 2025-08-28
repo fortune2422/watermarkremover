@@ -29,7 +29,7 @@ uploadInput.addEventListener("change", (e) => {
   reader.readAsDataURL(file);
 });
 
-// 遮罩绘制（黑色区域 = 需要去掉）
+// 遮罩绘制（白色区域 = 去掉）
 maskCanvas.addEventListener("mousedown", () => { drawing = true; });
 maskCanvas.addEventListener("mouseup", () => { drawing = false; maskCtx.beginPath(); });
 maskCanvas.addEventListener("mousemove", drawMask);
@@ -53,18 +53,21 @@ uploadButton.addEventListener("click", async () => {
   const imageData = imageCanvas.toDataURL("image/png");
   const maskData = maskCanvas.toDataURL("image/png");
 
-  const res = await fetch("/api/remove", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ image: imageData, mask: maskData })
-  });
+  try {
+    const res = await fetch("/api/remove", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image: imageData, mask: maskData })
+    });
 
-  if (res.ok) {
+    if (!res.ok) throw new Error("请求失败");
+
     const data = await res.json();
     const resultImg = new Image();
-    resultImg.src = data.result; // 后端返回的 data:image/png;base64
+    resultImg.src = data.result; // 后端返回的 base64
     document.body.appendChild(resultImg);
-  } else {
-    alert("去水印失败");
+
+  } catch (err) {
+    alert("去水印失败：" + err.message);
   }
 });
